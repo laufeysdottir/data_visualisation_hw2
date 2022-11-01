@@ -1,0 +1,241 @@
+---
+title: "datavis_hw2"
+output: github_document
+date: "2022-11-01"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(ggplot2)
+library(ggpubr)
+library(plotly)
+library(skimr)
+library(tidyr)
+library(purrr)
+```
+
+##Загрузка датасета 
+<br>
+```{r}
+ins_cost <- read.csv('insurance_cost.csv')
+skimr::skim(ins_cost)
+```
+
+<br>
+#График отношения индекса массы тела и трат на  страховку, раскрашенный по колонке smoker
+<br>
+```{r eval=FALSE}
+plot_ly(
+  data = ins_cost,
+  x = ~ bmi,
+  y = ~ charges,
+  color = ~ smoker
+)  %>%
+  layout(
+    title = 'График отношения индекса массы тела и трат на  страховку',
+    yaxis = list(title = 'Траты на страховку',
+                 zeroline = FALSE),  # Уберём выделения нулевых осей по y
+    xaxis = list(title = 'Индекс массы тела',
+                 zeroline = FALSE)) # Уберём выделения нулевых осей по y
+```
+<br>
+##То же, через ggplotly
+<br>
+```{r eval=FALSE}
+plot <- ins_cost %>%
+  ggplot(aes(x = bmi, y = charges, color = smoker)) +
+  geom_point(size = 1.2) +
+  labs(x = "ИМТ", y = "Траты на страховку") +
+  theme_classic2()
+
+ggplotly(plot)
+```
+
+<br>
+#Корреляционный анализ insurance cost
+<br>
+```{r warning=FALSE}
+library(corrplot)
+
+cor_ins_cost <- ins_cost %>%
+  select(is.integer|is.numeric)
+cor_ins <- cor(cor_ins_cost)
+cor_ins
+```
+
+<br>
+##Визуализация анализа минимум двумя новыми способами
+<br>
+###Первый способ
+<br>
+```{r warning=FALSE}
+corrplot(cor_ins, method = 'color', order = 'alphabet')
+```
+
+<br>
+###Второй способ
+<br>
+```{r warning=FALSE}
+corrplot(cor_ins, method = 'square', order = 'FPC', type = 'lower', diag = FALSE)
+```
+
+<br>
+#Создание датафрейма, содержащего только нумерические переменные
+<br>
+```{r warning=FALSE}
+num_ins <- fastDummies::dummy_cols(
+  ins_cost,
+  select_columns = c("sex","smoker", "region"),
+   remove_selected_columns = TRUE
+)
+```
+
+<br>
+#Иерархическая кластеризация на полученном датафрейме
+<br>
+
+```{r warning=FALSE}
+scaled_num_ins <- scale(num_ins)
+#head(scaled_num_ins)
+dist_num_ins <- dist(scaled_num_ins, method = "euclidean")
+as.matrix(dist_num_ins)[1:6, 1:6]
+
+res.hc <- hclust(d = dist_num_ins, method = "ward.D2")
+library("factoextra")
+fviz_dend(res.hc, cex = 0.5)
+```
+
+<br>
+##Еще два графика по иерархической кластеризации из учебника
+<br>
+
+###Первый график
+<br>
+```{r warning=FALSE}
+
+grp <- cutree(res.hc, k = 3)
+#head(grp, n = 3)
+fviz_cluster(list(data = num_ins, cluster = grp),
+             palette = c("#2E9FDF", "#FC4E07", "#E7B800"),
+             ellipse.type = "convex", # Concentration ellipse
+             repel = TRUE, # Avoid label overplotting (slow)
+             show.clust.cent = FALSE, ggtheme = theme_minimal())
+
+```
+
+
+<br>
+###Второй график
+<br>
+
+```{r warning=FALSE}
+
+
+library(dendextend)
+
+res.dist <- dist(num_ins, method = "euclidean")
+
+
+hc1 <- hclust(res.dist, method = "average")
+hc2 <- hclust(res.dist, method = "ward.D2")
+
+dend1 <- as.dendrogram (hc1)
+dend2 <- as.dendrogram (hc2)
+
+dend_list <- dendlist(dend1, dend2)
+
+tanglegram(dend1, dend2,
+           highlight_distinct_edges = FALSE, # Turn-off dashed lines
+           common_subtrees_color_lines = FALSE, # Turn-off line colors
+           common_subtrees_color_branches = TRUE, # Color common branches
+           main = paste("entanglement =", round(entanglement(dend_list), 2))
+           )
+
+
+```
+<br>
+*Выглядит жутко!*
+<br>
+###Третий график
+<br>
+```{r}
+
+fviz_dend(res.hc, k = 4, cex = 0.4, horiz = TRUE, k_colors = "jco",
+          rect = TRUE, rect_border = "jco", rect_fill = TRUE)
+```
+
+<br>
+#Одновременный график heatmap и иерархической кластеризации 
+<br>
+```{r}
+library(pheatmap)
+pheatmap(scaled_num_ins)
+```
+
+<br>
+#Анализ данных того же датафрейма методом PCA. Кратко  интерпретация результатов. 
+<br>
+
+```{r}
+pca_ins <- prcomp(scaled_num_ins, scale = F) #оно же у нас уже нормированно? 
+summary(pca_ins)
+```
+<br>
+На первые четыре переменные приходится 64% вариации. Построим график.
+<br>
+```{r}
+fviz_eig(pca_ins, 
+         addlabels = T, 
+         ylim = c(0, 40))
+```
+<br>
+Получилось не очень хорошо, но все же первые три компоненты объясняют 50% дисперсии. 90% дисперсии объясняется только на седьмой главной компоненте.
+<br>
+```{r}
+fviz_pca_var(pca_ins, col.var = "contrib")
+```
+<br>
+Брррр. Ну, регион проживания явно вносит малую лепту по сравнению с полом и курением, хотя по нему наверняка можно здорово делать кластеризацию. Пол и курение разнонаправленны, это логично. Интересно сгруппировались charges и курильщики.
+<br>
+```{r}
+fviz_contrib(pca_ins, choice = "var", axes = 1, top = 24) # 1
+fviz_contrib(pca_ins, choice = "var", axes = 2, top = 24) # 2
+fviz_contrib(pca_ins, choice = "var", axes = 3, top = 24) # 3
+```
+<br>
+По полу и курению хорошо можно кластеризовать данные?
+<br>
+
+#График PCA по наблюдениям и переменным. Кластеризация данных на нём по возрастным группам.
+<br>
+```{r}
+library(ggbiplot)
+
+ggbiplot(pca_ins, 
+         scale=0, alpha = 0.1) + 
+  theme_minimal()
+
+```
+<br>
+##Новая переменная с возрастными группами.
+<br>
+```{r}
+age_ins <- num_ins %>% 
+  mutate(age_group = case_when(
+    age < 31 ~ "18-30",
+    age >= 31 & age < 46 ~ "31-45",
+    age >= 46 & age < 58 ~ "46-57",
+    age >= 58 ~ "58+"
+    ))
+```
+<br>
+```{r}
+ggbiplot(pca_ins,
+         scale = 0,
+         groups = as.factor(age_ins$age_group),
+         ellipse = T,
+         alpha = 0.1) + 
+  theme_minimal()
+```
+
