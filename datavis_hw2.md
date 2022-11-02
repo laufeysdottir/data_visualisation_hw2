@@ -2,7 +2,9 @@ datavis_hw2
 ================
 2022-11-01
 
-\##Загрузка датасета <br>
+# Загрузка датасета
+
+<br>
 
 ``` r
 ins_cost <- read.csv('insurance_cost.csv')
@@ -40,8 +42,9 @@ Data summary
 | children      |         0 |             1 |     1.09 |     1.21 |    0.00 |    0.00 |    1.00 |     2.00 |     5.00 | ▇▂▂▁▁ |
 | charges       |         0 |             1 | 13270.42 | 12110.01 | 1121.87 | 4740.29 | 9382.03 | 16639.91 | 63770.43 | ▇▂▁▁▁ |
 
-<br> \#График отношения индекса массы тела и трат на страховку,
-раскрашенный по колонке smoker <br>
+# График отношения индекса массы тела и трат на страховку, раскрашенный по колонке smoker
+
+<br>
 
 ``` r
 plot_ly(
@@ -58,7 +61,11 @@ plot_ly(
                  zeroline = FALSE)) # Уберём выделения нулевых осей по y
 ```
 
-<br> \##То же, через ggplotly <br>
+<br>
+
+## То же, через ggplotly
+
+<br>
 
 ``` r
 plot <- ins_cost %>%
@@ -70,7 +77,11 @@ plot <- ins_cost %>%
 ggplotly(plot)
 ```
 
-<br> \#Корреляционный анализ insurance cost <br>
+<br>
+
+# Корреляционный анализ insurance cost
+
+<br>
 
 ``` r
 library(corrplot)
@@ -91,8 +102,15 @@ cor_ins
     ## bmi      0.1092719 0.01275890 1.0000000 0.19834097
     ## charges  0.2990082 0.06799823 0.1983410 1.00000000
 
-<br> \##Визуализация анализа минимум двумя новыми способами <br>
-\###Первый способ <br>
+<br>
+
+## Визуализация анализа минимум двумя новыми способами
+
+<br>
+
+### Первый способ
+
+<br>
 
 ``` r
 corrplot(cor_ins, method = 'color', order = 'alphabet')
@@ -100,7 +118,11 @@ corrplot(cor_ins, method = 'color', order = 'alphabet')
 
 ![](datavis_hw2_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
 
-<br> \###Второй способ <br>
+<br>
+
+### Второй способ
+
+<br>
 
 ``` r
 corrplot(cor_ins, method = 'square', order = 'FPC', type = 'lower', diag = FALSE)
@@ -108,7 +130,10 @@ corrplot(cor_ins, method = 'square', order = 'FPC', type = 'lower', diag = FALSE
 
 ![](datavis_hw2_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
 
-<br> \#Создание датафрейма, содержащего только нумерические переменные
+<br>
+
+# Создание датафрейма, содержащего только нумерические переменные
+
 <br>
 
 ``` r
@@ -119,7 +144,11 @@ num_ins <- fastDummies::dummy_cols(
 )
 ```
 
-<br> \#Иерархическая кластеризация на полученном датафрейме <br>
+<br>
+
+# Иерархическая кластеризация на полученном датафрейме
+
+<br>
 
 ``` r
 scaled_num_ins <- scale(num_ins)
@@ -149,9 +178,15 @@ fviz_dend(res.hc, cex = 0.5)
 
 ![](datavis_hw2_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
 
-<br> \##Еще два графика по иерархической кластеризации из учебника <br>
+<br>
 
-\###Первый график <br>
+## Еще два графика по иерархической кластеризации из учебника
+
+<br>
+
+### Первый график
+
+<br>
 
 ``` r
 grp <- cutree(res.hc, k = 3)
@@ -165,7 +200,11 @@ fviz_cluster(list(data = num_ins, cluster = grp),
 
 ![](datavis_hw2_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
 
-<br> \###Второй график <br>
+<br>
+
+### Второй график
+
+<br>
 
 ``` r
 library(dendextend)
@@ -218,7 +257,11 @@ tanglegram(dend1, dend2,
 ```
 
 ![](datavis_hw2_files/figure-gfm/unnamed-chunk-10-1.png)<!-- --> <br>
-*Выглядит жутко!* <br> \###Третий график <br>
+*Выглядит жутко!* <br>
+
+### Третий график
+
+<br>
 
 ``` r
 fviz_dend(res.hc, k = 4, cex = 0.4, horiz = TRUE, k_colors = "jco",
@@ -230,7 +273,11 @@ fviz_dend(res.hc, k = 4, cex = 0.4, horiz = TRUE, k_colors = "jco",
 
 ![](datavis_hw2_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
 
-<br> \#Одновременный график heatmap и иерархической кластеризации <br>
+<br>
+
+# Одновременный график heatmap и иерархической кластеризации
+
+<br>
 
 ``` r
 library(pheatmap)
@@ -239,8 +286,11 @@ pheatmap(scaled_num_ins)
 
 ![](datavis_hw2_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
 
-<br> \#Анализ данных того же датафрейма методом PCA. Кратко
-интерпретация результатов. <br>
+<br>
+
+# Анализ данных того же датафрейма методом PCA. Кратко интерпретация результатов.
+
+<br>
 
 ``` r
 pca_ins <- prcomp(scaled_num_ins, scale = F) #оно же у нас уже нормированно? 
@@ -300,8 +350,9 @@ fviz_contrib(pca_ins, choice = "var", axes = 3, top = 24) # 3
 ![](datavis_hw2_files/figure-gfm/unnamed-chunk-16-3.png)<!-- --> <br> По
 полу и курению хорошо можно кластеризовать данные? <br>
 
-\#График PCA по наблюдениям и переменным. Кластеризация данных на нём по
-возрастным группам. <br>
+# График PCA по наблюдениям и переменным. Кластеризация данных на нём по возрастным группам.
+
+<br>
 
 ``` r
 library(ggbiplot)
@@ -355,7 +406,10 @@ ggbiplot(pca_ins,
 ```
 
 ![](datavis_hw2_files/figure-gfm/unnamed-chunk-17-1.png)<!-- --> <br>
-\##Новая переменная с возрастными группами. <br>
+
+## Новая переменная с возрастными группами.
+
+<br>
 
 ``` r
 age_ins <- num_ins %>% 
